@@ -1,15 +1,15 @@
-from fastapi import APIRouter , Path , Query
+from fastapi import APIRouter , Path , Query 
 from converter import sync_converter, async_converter
 from asyncio import gather
+from schemas import ConverterInput, ConverterOutput
 
 router = APIRouter(prefix="/converter")
 
 @router.get('/sync/{from_currency}')
-def converter(from_currency: str = Path(regex='^[A-Z]{3}$'),
-              to_currenies: str = Query(regex='^[A-Z]{3}(,[A-Z]{3})*$'),
-              price: float = Query(gt=0)
+def converter(body: ConverterInput,from_currency: str = Path(regex='^[A-Z]{3}$')
 ):
-    to_currenies = to_currenies.split(',')
+    to_currenies = body.to_currenies
+    price = body.price
     result =  []
 
     for courrency in to_currenies:
@@ -23,12 +23,11 @@ def converter(from_currency: str = Path(regex='^[A-Z]{3}$'),
     return result
 
 
-@router.get('/async/{from_currency}')
-async def async_converter_router(from_currency: str = Path(regex='^[A-Z]{3}$'),
-              to_currenies: str = Query(regex='^[A-Z]{3}(,[A-Z]{3})*$'),
-              price: float = Query(gt=0)
+@router.get('/async/{from_currency}', response_model=ConverterOutput)
+async def async_converter_router(body: ConverterInput,from_currency: str = Path(regex='^[A-Z]{3}$')
 ):
-    to_currenies = to_currenies.split(',')
+    to_currenies = body.to_currenies
+    price = body.price
     courotines =  []
 
     for courotine in to_currenies:
@@ -39,7 +38,8 @@ async def async_converter_router(from_currency: str = Path(regex='^[A-Z]{3}$'),
 
         courotines.append(coro)
     result = await gather(*courotines)
-    return result
+    return ConverterOutput(
+        message="Sucessse",
+        data=result
+    )
 
-
-    return result
